@@ -1,0 +1,54 @@
+====================================================================
+CONTEXTE DU PROJET : BALL AND BEAM IoT (ESP32)
+====================================================================
+Ce fichier a été généré pour servir de contexte complet à une Intelligence 
+Artificielle lors de sessions de développement futures, afin de comprendre 
+instantanément l'état actuel, l'architecture et les spécificités du projet.
+
+1. RESUME DU PROJET
+-------------------
+- Nom : Système de contrôle "Ball and Beam" (Bille et Poutre) connecté.
+- Objectif initial : Remplacer une commande locale filaire (Arduino + LabVIEW) 
+  par un système IoT autonome sur ESP32 avec une interface web temps réel.
+- L'utilisateur peut se connecter à un portail web, voir un graphique en direct 
+  de la position de la bille vs la consigne, et ajuster les paramètres PID à la volée.
+
+2. MATERIEL UTILISE
+-------------------
+- Microcontrôleur : ESP32 (Wi-Fi intégré, processeur double cœur).
+- Capteur : Adafruit VL53L0X (Capteur de distance ToF via I2C : SDA=D21, SCL=D22).
+- Actionneur : Moteur pas-à-pas (Contrôlé via broches Step=18 et Dir=19).
+
+3. ARCHITECTURE LOGICIELLE (FIRMWARE - C++)
+-------------------
+- Fichiers principaux : 
+  * `main_esp32/main_esp32.ino` (Logique principale, PID, Serveur Web)
+  * `main_esp32/webpage.h` (Fichiers HTML/CSS/JS stockés en variables constantes)
+- Bibliothèques requises :
+  * ESPAsyncWebServer et AsyncTCP (Pour le serveur non bloquant et les WebSockets)
+  * ArduinoJson (Pour parser et envoyer les données de configuration et de graphes)
+  * Adafruit_VL53L0X (Pour le capteur)
+- Boucle d'asservissement : Boucle PID classique basée sur le calcul du temps écoulé `dt`. Le PID génère une commande convertie en nombre de pas pour le moteur.
+- Mode "Simulation" Actuel : Actuellement, le code (lignes 210+) simule une onde sinusoïdale pour la distance de la bille si le capteur matériel n'est pas détecté. Ceci permet de tester l'interface Web (dashboard et graphes) avec un ESP32 nu. Il faudra décommenter `lox.rangingTest` pour le test réel.
+
+4. INTERFACE WEB (FRONT-END)
+-------------------
+- Hébergement : Les fichiers sont injectés sous forme de chaînes (Raw Strings `R"=====()====="`) dans le code C++ pour éviter la gestion complexe de SPIFFS/LittleFS.
+- Sécurité : Page de login `/` avec identifiants en dur (admin / myadmin) qui génère un cookie `session=authenticated` d'une durée de session.
+- Dashboard (`/dashboard`) :
+  * Affiche le statut de connexion WebSocket en temps réel (ONLINE/OFFLINE).
+  * Affiche un timer "Uptime" côté client.
+  * Formulaires pour envoyer les valeurs Kp, Ki, Kd et Setpoint via de l'AJAX/WebSocket.
+  * Graphe en temps réel généré par Chart.js affichant les données du WebSocket (Distance vs Setpoint). Les websockets supportent `ws://` gèrent dynamiquement le protocole `wss://` si le projet passe par un tunnel HTTP sécurisé.
+
+5. RESEAU ET DEPLOIEMENT
+-------------------
+- Mode Wi-Fi : "Station" (Se connecte à un routeur via SSID et Mot de passe).
+- IoT Tunneling : Le projet a été testé avec Ngrok (`ngrok http <IP_LOCALE>:80`) pour fournir une URL publique (HTTPS) accessible via la 4G. 
+
+
+====================================================================
+Note à l'IA : Lorsque vous prenez ce contexte, vérifiez le code 
+actuel dans `main_esp32/main_esp32.ino` pour valider que les 
+composants et algorithmes correspondent à cet état initial.
+====================================================================

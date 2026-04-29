@@ -1,0 +1,61 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\title{Rapport de Projet IoT : Contrôle et Supervision d'un Système Bille et Poutre (Ball and Beam)}
+\author{Firas}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Ce rapport présente la conception et la réalisation d'un système IoT de contrôle classique de type "Bille et Poutre" (Ball and Beam). Le projet consistait initialement en une commande par Arduino via LabVIEW. L'objectif principal de ce projet a été la migration complète de l'architecture vers un microcontrôleur ESP32 doté d'une interface web dynamique et autonome, supprimant ainsi la dépendance logicielle à LabVIEW.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+\section{Introduction}
+Les systèmes "Ball and Beam" sont des classiques de l'automatique permettant de démontrer l'efficacité des régulateurs PID. En intégrant les technologies IoT (Internet des Objets), il devient possible de superviser, de configurer et d'analyser le système à distance. Pour ce faire, ce projet effectue le portage d'un code Arduino vers une puce ESP32 intégrant un serveur web complet et sécurisé.
+
+\section{Architecture Matérielle}
+L'architecture repose sur les éléments matériels suivants :
+\begin{itemize}
+    \item \textbf{Microcontrôleur ESP32 :} Cerveau du système, choisi pour ses capacités de traitement (Double cœur) et sa connectivité Wi-Fi native.
+    \item \textbf{Capteur de distance VL53L0X :} Un capteur de temps de vol (ToF) communicant par I2C, assurant la mesure en temps réel de la position de la bille sur la poutre.
+    \item \textbf{Moteur pas à pas :} Contrôle l'inclinaison de la poutre en recevant des signaux "Step" (Pas) et "Dir" (Direction) du microcontrôleur.
+\end{itemize}
+
+\section{Architecture Logicielle}
+\subsection{Serveur Web et Interface (Front-end)}
+Une interface Web moderne a été développée pour la supervision :
+\begin{itemize}
+    \item \textbf{HTML/CSS/JS embarqué :} Hébergé en mémoire Flash sur l'ESP32.
+    \item \textbf{Authentification :} Une page de login sécurisée ("admin"/"myadmin") basée sur des cookies réseau a été implémentée pour restreindre l'accès à la commande.
+    \item \textbf{Dashboard Graphique :} Utilisation de la librairie graphique \texttt{Chart.js} permettant de tracer en temps de réel (taux de rafraîchissement élevé) l'évolution de la distance de la bille et le Setpoint (consigne).
+\end{itemize}
+
+\subsection{Programmation ESP32 (Back-end)}
+Le micrologiciel de l'ESP32 est programmé en C++ et repose sur les principes suivants :
+\begin{itemize}
+    \item \textbf{Serveur Asynchrone (\texttt{ESPAsyncWebServer}) :} Permet de servir le contenu de la page web sans bloquer la boucle d'exécution principale du PID.
+    \item \textbf{WebSockets (\texttt{AsyncWebSocket}) :} Permettent un transfert bidirectionnel extrêmement rapide et léger sans actualiser la page web. Le serveur envoie les données de position au client toutes les 200 ms, tandis que le client peut envoyer l'ajustement du PID (Kp, Ki, Kd) ou de la consigne (Setpoint) instantanément.
+    \item \textbf{Algorithme PID :} Boucle de régulation à temps discret calculant les termes proportionnel, intégral et dérivé pour contrôler la position du moteur pas-à-pas en fonction de l'erreur calculée (Setpoint - Distance réelle).
+\end{itemize}
+
+\section{Connectivité et Accessibilité Extérieure}
+Bien que le système fonctionne en mode "Station" sur un réseau local WLAN, des solutions de Tunneling HTTP (comme \textbf{Ngrok}) ont été employées pour exposer l'interface web de manière sécurisée sur le cloud public. Le tableau de bord est alors accessible à tout visiteur externe via l'internet, démontrant un fonctionnement IoT complet.
+
+\section{Simulation et Validation}
+Pour pallier aux problèmes matériels de test sans les composants réels physiquement connectés, un système de \textit{mocking} (simulation mathématique avec une onde sinusoïdale) de la boucle I2C (capteur VL53L0X) a été intégré dans le code. Ceci a permis le test fonctionnel exhaustif aux niveaux réseau, sécurité et affichage du flux de données WebSocket.
+
+\section{Conclusion}
+Le passage d'un contrôleur connecté par câble (LabVIEW) à une architecture autonome basée sur l'ESP32 dote le système d'une flexibilité indéniable. L'intégration de tableaux de bord WebSockets repousse les limites des applications locales de cyber-physiques vers un véritable objet connecté, accessible de partout, avec une latence quasi nulle tout en respectant des exigences d'authentification basiques.
+\end{document}
