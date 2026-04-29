@@ -11,8 +11,8 @@
 // ==========================================
 // 1. WIFI SETTINGS
 // ==========================================
-const char* ssid = "YOUR_ROUTER_SSID";
-const char* password = "YOUR_ROUTER_PASSWORD";
+const char* ssid = "MFY";
+const char* password = "houlemi17";
 
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
@@ -115,9 +115,9 @@ void setup() {
   Serial.begin(115200); 
   Wire.begin(); // ESP32 Default SDA=D21, SCL=D22
   
-  if(!lox.begin()){
-    Serial.println("Failed to boot VL53L0X. Check wiring.");
-  }
+  //if(!lox.begin()){
+  //  Serial.println("Failed to boot VL53L0X. Check wiring. Running without sensor for testing.");
+  //}
 
   // --- CONNECT TO WIFI ---
   WiFi.begin(ssid, password);
@@ -193,7 +193,14 @@ void loop() {
   // 1. SENSOR AND PID LOGIC
   if (dt > 0) {
     VL53L0X_RangingMeasurementData_t measure;
-    lox.rangingTest(&measure, false);
+    // Only attempt to read sensor if it was successfully initialized.
+    // Since we are mocking without the robot, we'll simulate a distance reading.
+    // Fake distance data varying slowly around the setpoint to make the graph look alive
+    currentDistance = setpoint + (sin(millis() / 1000.0) * 20.0);
+    measure.RangeStatus = 0; // Fake valid status for PID logic
+    measure.RangeMilliMeter = currentDistance;
+    
+    // lox.rangingTest(&measure, false); // Real sensor code (commented out for bare testing)
 
     if (measure.RangeStatus != 4) {
       currentDistance = measure.RangeMilliMeter; 
